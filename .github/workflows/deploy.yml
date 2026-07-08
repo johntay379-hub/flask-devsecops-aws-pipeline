@@ -26,9 +26,20 @@ jobs:
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build and push Docker image
+      - name: Build Docker image
         run: |
           docker build -t ${{ secrets.ECR_REPOSITORY }}:latest ./app
+
+      - name: Scan image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ secrets.ECR_REPOSITORY }}:latest
+          format: table
+          exit-code: 0
+          severity: CRITICAL,HIGH
+
+      - name: Push Docker image to ECR
+        run: |
           docker push ${{ secrets.ECR_REPOSITORY }}:latest
 
       - name: Deploy to EC2 via SSM
